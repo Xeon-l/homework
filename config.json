@@ -1,0 +1,7 @@
+{
+  "bindings": [
+    {"assignee": "user1", "designs": ["芯片A", "芯片B"]},
+    {"assignee": "user2", "designs": ["芯片A"]}
+  ],
+  "password": "admin123"
+}
