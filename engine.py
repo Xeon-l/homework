@@ -1,12 +1,10 @@
 import subprocess
 import os
-import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import models
 
 _executor = ThreadPoolExecutor(max_workers=10)
-_lock = threading.Lock()
 
 
 def submit_task(task_id):
