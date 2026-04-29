@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Monitor</title>
+<style>
+:root {
+  --bg: #f0f2f5;
+  --card-bg: #ffffff;
+  --primary: #4f6ef7;
+  --primary-hover: #3b5de7;
+  --text: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border: #e5e7eb;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 8px;
+  --radius-sm: 4px;
+  --pending: #f59e0b;
+  --running: #3b82f6;
+  --success: #10b981;
+  --failed: #ef4444;
+  --chip-bg: #f3f4f6;
+  --chip-active-bg: #4f6ef7;
+  --chip-active-text: #ffffff;
+  --input-bg: #f9fafb;
+  --max-width: 1100px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ===== Login Page ===== */
+#login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-card h1 {
+  font-size: 24px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.login-card p {
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.login-card .error-msg {
+  color: var(--failed);
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 12px;
+  min-height: 20px;
+}
+
+/* ===== Layout ===== */
+#dashboard {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 20px;
+  display: none;
+}
+
+/* ===== Status Bar ===== */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px 20px;
+  margin-bottom: 20px;
+}
+
+.status-bar .user-info {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.status-bar .user-info strong {
+  color: var(--text);
+}
+
+/* ===== Cards ===== */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+/* ===== Form ===== */
+.form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+}
+
+.form-group label .required {
+  color: var(--failed);
+  margin-left: 2px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background: var(--input-bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.form-group input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== Design Chips ===== */
+.chips-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.chips-group .empty-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--chip-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.chip:hover {
+  border-color: var(--primary);
+  background: #eef1ff;
+}
+
+.chip.active {
+  background: var(--chip-active-bg);
+  border-color: var(--chip-active-bg);
+  color: var(--chip-active-text);
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn-danger {
+  background: var(--failed);
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--chip-bg);
+}
+
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.btn-logout {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-logout:hover {
+  border-color: var(--failed);
+  color: var(--failed);
+}
+
+/* ===== Stats Row ===== */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-card .stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-card .stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.stat-card.stat-pending .stat-number { color: var(--pending); }
+.stat-card.stat-running .stat-number { color: var(--running); }
+.stat-card.stat-success .stat-number { color: var(--success); }
+.stat-card.stat-failed .stat-number { color: var(--failed); }
+
+/* ===== Task Table ===== */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+thead th {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+tbody tr:hover {
+  background: #f8f9ff;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.col-id { width: 60px; }
+.col-name { min-width: 140px; }
+.col-assignee { width: 100px; }
+.col-design { width: 120px; }
+.col-status { width: 100px; }
+.col-actions { width: 180px; }
+
+.task-name {
+  font-weight: 500;
+}
+
+.design-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.design-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: var(--chip-bg);
+  color: var(--text-secondary);
+}
+
+/* ===== Status Badges ===== */
+.status-badge {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.running {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ===== Actions in Table ===== */
+.action-btns {
+  display: flex;
+  gap: 6px;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-state p {
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* ===== Loading State ===== */
+.loading-overlay {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.loading-overlay.show {
+  display: flex;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-left: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ===== Log Modal ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal-content {
+  background: #1e1e2e;
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 720px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #333;
+}
+
+.modal-header h3 {
+  font-size: 16px;
+  color: #e0e0e0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.modal-close:hover {
+  color: #fff;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-body pre {
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #4ade80;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+}
+
+.modal-body .log-empty {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* ===== Form Error ===== */
+.form-error {
+  color: var(--failed);
+  font-size: 13px;
+  margin-top: 8px;
+  min-height: 20px;
+}
+
+/* ===== Toast / Notification ===== */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  padding: 12px 20px;
+  font-size: 14px;
+  z-index: 2000;
+  transform: translateX(120%);
+  transition: transform 0.3s ease;
+  max-width: 360px;
+}
+
+.toast.show {
+  transform: translateX(0);
+}
+
+.toast.toast-error {
+  border-left: 4px solid var(--failed);
+}
+
+.toast.toast-success {
+  border-left: 4px solid var(--success);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  #dashboard {
+    padding: 12px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .form-group {
+    min-width: 100%;
+  }
+
+  .col-actions {
+    width: auto;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== Toast Container ========== -->
+<div id="toast" class="toast"></div>
+
+<!-- ========== Login Page ========== -->
+<div id="login-page">
+  <div class="login-card">
+    <h1>Task Monitor</h1>
+    <p>Please enter password to continue</p>
+    <div id="login-error" class="error-msg"></div>
+    <form id="login-form">
+      <div class="form-group" style="margin-bottom:16px;">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-primary" id="login-btn" style="width:100%;">Login</button>
+    </form>
+  </div>
+</div>
+
+<!-- ========== Dashboard ========== -->
+<div id="dashboard">
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="user-info">Logged in as <strong id="user-name">User</strong></div>
+    <button id="logout-btn" class="btn-logout">Logout</button>
+  </div>
+
+  <!-- Create Task Form -->
+  <div class="card">
+    <h2>Create Task</h2>
+    <form id="task-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name <span class="required">*</span></label>
+          <input type="text" id="task-name" placeholder="Task name" required>
+        </div>
+        <div class="form-group">
+          <label>Script Path <span class="required">*</span></label>
+          <input type="text" id="task-script" placeholder="/path/to/script.sh" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Detail</label>
+          <textarea id="task-detail" placeholder="Optional description..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Accept Path <span class="required">*</span></label>
+          <input type="text" id="task-accept" placeholder="/path/to/accept/dir" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Design <span class="required">*</span></label>
+          <div id="design-chips" class="chips-group">
+            <span class="empty-hint">Loading designs...</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Assignee</label>
+          <input type="text" id="task-assignee" placeholder="Auto-filled from design selection">
+        </div>
+      </div>
+      <div id="form-error" class="form-error"></div>
+      <button type="submit" class="btn btn-primary" id="submit-btn">Submit</button>
+    </form>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card stat-pending">
+      <div class="stat-number" id="stat-pending">0</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-card stat-running">
+      <div class="stat-number" id="stat-running">0</div>
+      <div class="stat-label">Running</div>
+    </div>
+    <div class="stat-card stat-success">
+      <div class="stat-number" id="stat-success">0</div>
+      <div class="stat-label">Success</div>
+    </div>
+    <div class="stat-card stat-failed">
+      <div class="stat-number" id="stat-failed">0</div>
+      <div class="stat-label">Failed</div>
+    </div>
+  </div>
+
+  <!-- Task Table -->
+  <div class="card">
+    <h2>Tasks</h2>
+    <div id="table-loading" class="loading-overlay show">
+      <div class="loading-spinner"></div>
+      <span class="loading-text">Loading tasks...</span>
+    </div>
+    <div class="table-wrapper" id="table-wrapper" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-id">ID</th>
+            <th class="col-name">Name</th>
+            <th class="col-assignee">Assignee</th>
+            <th class="col-design">Design</th>
+            <th class="col-status">Status</th>
+            <th class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="task-tbody"></tbody>
+      </table>
+    </div>
+    <div id="empty-state" class="empty-state" style="display:none;">
+      <p>No tasks yet. Create one above.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Log Modal ========== -->
+<div id="log-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="log-modal-title">Task Log</h3>
+      <button id="log-modal-close" class="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="log-loading" class="loading-overlay show">
+        <div class="loading-spinner"></div>
+        <span class="loading-text">Loading log...</span>
+      </div>
+      <pre id="log-content" style="display:none;"></pre>
+      <div id="log-empty" class="log-empty" style="display:none;">No log output.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ===== State =====
+  var bindings = [];           // {assignee, designs:[]}
+  var designSet = [];          // flat unique design names from bindings
+  var selectedDesigns = [];    // currently selected design names
+  var pollSince = '';
+  var pollTimer = null;
+  var isLoggedIn = false;
+
+  // ===== DOM refs =====
+  var $ = function (id) { return document.getElementById(id); };
+
+  var loginPage     = $('login-page');
+  var dashboard     = $('dashboard');
+  var loginForm     = $('login-form');
+  var loginPassword = $('login-password');
+  var loginBtn      = $('login-btn');
+  var loginError    = $('login-error');
+  var logoutBtn     = $('logout-btn');
+  var userNameEl    = $('user-name');
+
+  var taskForm      = $('task-form');
+  var taskName      = $('task-name');
+  var taskDetail    = $('task-detail');
+  var taskScript    = $('task-script');
+  var taskAccept    = $('task-accept');
+  var taskAssignee  = $('task-assignee');
+  var designChips   = $('design-chips');
+  var submitBtn     = $('submit-btn');
+  var formError     = $('form-error');
+
+  var statPending   = $('stat-pending');
+  var statRunning   = $('stat-running');
+  var statSuccess   = $('stat-success');
+  var statFailed    = $('stat-failed');
+  var taskTbody     = $('task-tbody');
+  var tableLoading  = $('table-loading');
+  var tableWrapper  = $('table-wrapper');
+  var emptyState    = $('empty-state');
+
+  var logModal      = $('log-modal');
+  var logModalTitle = $('log-modal-title');
+  var logContent    = $('log-content');
+  var logLoading    = $('log-loading');
+  var logEmpty      = $('log-empty');
+  var logClose      = $('log-modal-close');
+
+  var toastEl       = $('toast');
+
+  // ===== Toast =====
+  var toastTimer = null;
+
+  function showToast(message, type) {
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+    toastEl.textContent = message;
+    toastEl.className = 'toast';
+    if (type === 'error' || type === 'success') {
+      toastEl.classList.add('toast-' + type);
+    }
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function () {
+      toastEl.classList.remove('show');
+    }, 3000);
+  }
+
+  // ===== API helper =====
+  function apiFetch(url, options) {
+    options = options || {};
+    options.headers = options.headers || {};
+    options.headers['Content-Type'] = 'application/json';
+    if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+      options.body = JSON.stringify(options.body);
+    }
+    return fetch(url, options).then(function (resp) {
+      if (resp.status === 401) {
+        // session expired
+        handleLogout();
+        return Promise.reject(new Error('Session expired. Please login again.'));
+      }
+      if (!resp.ok) {
+        return resp.json().then(function (data) {
+          var err = new Error(data && data.error ? data.error : 'Request failed');
+          err.status = resp.status;
+          throw err;
+        }).catch(function (e) {
+          if (e instanceof SyntaxError) {
+            var err2 = new Error('Request failed (status ' + resp.status + ')');
+            err2.status = resp.status;
+            throw err2;
+          }
+          throw e;
+        });
+      }
+      return resp.json();
+    });
+  }
+
+  // ===== Login / Logout =====
+  function handleLoginSuccess() {
+    isLoggedIn = true;
+    loginPage.style.display = 'none';
+    dashboard.style.display = 'block';
+    loginError.textContent = '';
+    initDashboard();
+  }
+
+  function handleLogout() {
+    isLoggedIn = false;
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+    dashboard.style.display = 'none';
+    loginPage.style.display = 'flex';
+    loginPassword.value = '';
+    loginError.textContent = '';
+    // Also clear session on server (best-effort)
+    fetch('/login', { method: 'DELETE' }).catch(function () {});
+  }
+
+  loginForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var pwd = loginPassword.value.trim();
+    if (!pwd) return;
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Logging in...';
+    loginError.textContent = '';
+
+    apiFetch('/login', {
+      method: 'POST',
+      body: { password: pwd }
+    }).then(function () {
+      handleLoginSuccess();
+    }).catch(function (err) {
+      loginError.textContent = err.message || 'Login failed';
+    }).finally(function () {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Login';
+    });
+  });
+
+  logoutBtn.addEventListener('click', function () {
+    apiFetch('/login', { method: 'DELETE' }).catch(function () {});
+    handleLogout();
+  });
+
+  // ===== Dashboard Init =====
+  function initDashboard() {
+    loadConfig(function () {
+      renderChips();
+      autoFillAssignee();
+    });
+    loadTasks();
+    startPolling();
+  }
+
+  // ===== Config =====
+  function loadConfig(callback) {
+    apiFetch('/api/config').then(function (data) {
+      bindings = data.bindings || [];
+      // Extract unique design names preserving order
+      var seen = {};
+      designSet = [];
+      bindings.forEach(function (b) {
+        (b.designs || []).forEach(function (d) {
+          if (!seen[d]) {
+            seen[d] = true;
+            designSet.push(d);
+          }
+        });
+      });
+      if (callback) callback();
+    }).catch(function (err) {
+      console.error('Failed to load config:', err);
+      showToast('Failed to load config: ' + err.message, 'error');
+    });
+  }
+
+  // ===== Design Chips =====
+  function renderChips() {
+    designChips.innerHTML = '';
+    if (designSet.length === 0) {
+      var hint = document.createElement('span');
+      hint.className = 'empty-hint';
+      hint.textContent = 'No designs available';
+      designChips.appendChild(hint);
+      return;
+    }
+    designSet.forEach(function (name) {
+      var chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = name;
+      chip.dataset.design = name;
+      if (selectedDesigns.indexOf(name) !== -1) {
+        chip.classList.add('active');
+      }
+      chip.addEventListener('click', function () {
+        toggleChip(name, chip);
+      });
+      designChips.appendChild(chip);
+    });
+  }
+
+  function toggleChip(name, chipEl) {
+    var idx = selectedDesigns.indexOf(name);
+    if (idx === -1) {
+      selectedDesigns.push(name);
+      if (chipEl) chipEl.classList.add('active');
+    } else {
+      selectedDesigns.splice(idx, 1);
+      if (chipEl) chipEl.classList.remove('active');
+    }
+    autoFillAssignee();
+  }
+
+  function autoFillAssignee() {
+    if (selectedDesigns.length === 0) {
+      taskAssignee.value = '';
+      return;
+    }
+    // Find binding that matches ALL selected designs
+    var matched = null;
+    for (var i = 0; i < bindings.length; i++) {
+      var b = bindings[i];
+      var bDesigns = b.designs || [];
+      var allMatch = selectedDesigns.every(function (d) {
+        return bDesigns.indexOf(d) !== -1;
+      });
+      if (allMatch) {
+        matched = b.assignee;
+        break;
+      }
+    }
+    taskAssignee.value = matched || '';
+  }
+
+  // ===== Create Task =====
+  taskForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    formError.textContent = '';
+
+    var name = taskName.value.trim();
+    var detail = taskDetail.value.trim();
+    var scriptPath = taskScript.value.trim();
+    var acceptPath = taskAccept.value.trim();
+
+    if (!name) { formError.textContent = 'Name is required.'; return; }
+    if (!scriptPath) { formError.textContent = 'Script path is required.'; return; }
+    if (!acceptPath) { formError.textContent = 'Accept path is required.'; return; }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    apiFetch('/api/tasks', {
+      method: 'POST',
+      body: {
+        name: name,
+        detail: detail,
+        script_path: scriptPath,
+        accept_path: acceptPath,
+        assignee: taskAssignee.value.trim(),
+        design: selectedDesigns.join(',')
+      }
+    }).then(function () {
+      // Reset form
+      taskName.value = '';
+      taskDetail.value = '';
+      taskScript.value = '';
+      taskAccept.value = '';
+      taskAssignee.value = '';
+      selectedDesigns = [];
+      renderChips();
+      formError.textContent = '';
+      showToast('Task created successfully', 'success');
+      // Refresh tasks immediately
+      loadTasks();
+    }).catch(function (err) {
+      formError.textContent = err.message || 'Failed to create task';
+    }).finally(function () {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit';
+    });
+  });
+
+  // ===== Load Tasks =====
+  function loadTasks() {
+    tableLoading.classList.add('show');
+    tableWrapper.style.display = 'none';
+    emptyState.style.display = 'none';
+
+    apiFetch('/api/tasks').then(function (data) {
+      var tasks = data.tasks || [];
+      renderTasks(tasks);
+    }).catch(function (err) {
+      console.error('Failed to load tasks:', err);
+      showToast('Failed to load tasks: ' + err.message, 'error');
+      tableLoading.classList.remove('show');
+    });
+  }
+
+  function renderTasks(tasks) {
+    tableLoading.classList.remove('show');
+
+    if (!tasks || tasks.length === 0) {
+      tableWrapper.style.display = 'none';
+      emptyState.style.display = 'block';
+      taskTbody.innerHTML = '';
+      return;
+    }
+
+    tableWrapper.style.display = 'block';
+    emptyState.style.display = 'none';
+
+    var html = '';
+    tasks.forEach(function (t) {
+      var statusClass = (t.status || 'Pending').toLowerCase();
+      var statusText = t.status || 'Pending';
+      var badgeClass = 'status-badge ' + statusClass;
+
+      // Design tags
+      var designs = [];
+      if (t.design) {
+        designs = t.design.split(',').filter(function (d) { return d.trim(); });
+      }
+      var designHtml = '';
+      if (designs.length > 0) {
+        designHtml = '<div class="design-tags">';
+        designs.forEach(function (d) {
+          designHtml += '<span class="design-tag">' + escapeHtml(d.trim()) + '</span>';
+        });
+        designHtml += '</div>';
+      } else {
+        designHtml = '<span style="color:#9ca3af;font-size:12px;">--</span>';
+      }
+
+      html += '<tr>' +
+        '<td class="col-id">' + t.id + '</td>' +
+        '<td class="col-name"><span class="task-name">' + escapeHtml(t.name) + '</span></td>' +
+        '<td class="col-assignee">' + escapeHtml(t.assignee || '--') + '</td>' +
+        '<td class="col-design">' + designHtml + '</td>' +
+        '<td class="col-status"><span class="' + badgeClass + '">' + statusText + '</span></td>' +
+        '<td class="col-actions">' +
+          '<div class="action-btns">' +
+            '<button class="btn btn-outline btn-sm" onclick="window._viewLog(' + t.id + ')">Log</button>' +
+            '<button class="btn btn-outline btn-sm" onclick="window._copyTask(' + t.id + ')">Copy</button>' +
+            '<button class="btn btn-danger btn-sm" onclick="window._deleteTask(' + t.id + ')">Delete</button>' +
+          '</div>' +
+        '</td>' +
+      '</tr>';
+    });
+    taskTbody.innerHTML = html;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  // ===== Actions (exposed globally for onclick) =====
+  window._viewLog = function (taskId) {
+    logModalTitle.textContent = 'Task #' + taskId + ' Log';
+    logContent.style.display = 'none';
+    logEmpty.style.display = 'none';
+    logLoading.classList.add('show');
+    logModal.classList.add('show');
+
+    apiFetch('/api/tasks/' + taskId + '/log').then(function (data) {
+      logLoading.classList.remove('show');
+      if (data.log && data.log.trim()) {
+        logContent.textContent = data.log;
+        logContent.style.display = 'block';
+        logEmpty.style.display = 'none';
+      } else {
+        logContent.style.display = 'none';
+        logEmpty.style.display = 'block';
+      }
+    }).catch(function (err) {
+      logLoading.classList.remove('show');
+      logContent.textContent = 'Error loading log: ' + err.message;
+      logContent.style.display = 'block';
+      logEmpty.style.display = 'none';
+    });
+  };
+
+  window._copyTask = function (taskId) {
+    apiFetch('/api/tasks/' + taskId + '/copy', { method: 'POST' }).then(function () {
+      showToast('Task copied successfully', 'success');
+      loadTasks();
+    }).catch(function (err) {
+      showToast('Failed to copy task: ' + err.message, 'error');
+    });
+  };
+
+  window._deleteTask = function (taskId) {
+    if (!confirm('Are you sure you want to delete task #' + taskId + '?')) return;
+    apiFetch('/api/tasks/' + taskId, { method: 'DELETE' }).then(function () {
+      showToast('Task deleted', 'success');
+      loadTasks();
+    }).catch(function (err) {
+      showToast('Failed to delete task: ' + err.message, 'error');
+    });
+  };
+
+  // ===== Polling =====
+  function startPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(poll, 3000);
+  }
+
+  function poll() {
+    var url = '/api/poll';
+    if (pollSince) {
+      url += '?since=' + encodeURIComponent(pollSince);
+    }
+    apiFetch(url).then(function (data) {
+      var tasks = data.tasks || [];
+      var counts = data.counts || {};
+
+      // Update stats
+      statPending.textContent = counts.Pending || 0;
+      statRunning.textContent = counts.Running || 0;
+      statSuccess.textContent = counts.Success || 0;
+      statFailed.textContent = counts.Failed || 0;
+
+      // Update table
+      renderTasks(tasks);
+
+      // Update pollSince with latest timestamp
+      var latest = null;
+      tasks.forEach(function (t) {
+        if (t.updated_at && (!latest || t.updated_at > latest)) {
+          latest = t.updated_at;
+        }
+      });
+      if (latest) {
+        pollSince = latest;
+      } else if (tasks.length > 0 && tasks[0].updated_at) {
+        // Fallback: first task's updated_at
+        pollSince = tasks[0].updated_at;
+      }
+    }).catch(function (err) {
+      // Silently handle poll errors to avoid console spam
+      if (err.message === 'Session expired. Please login again.') {
+        // handled by apiFetch
+      }
+    });
+  }
+
+  // ===== Log Modal Close =====
+  function closeLogModal() {
+    logModal.classList.remove('show');
+    logContent.style.display = 'none';
+    logEmpty.style.display = 'none';
+    logLoading.classList.remove('show');
+  }
+
+  logClose.addEventListener('click', closeLogModal);
+  logModal.addEventListener('click', function (e) {
+    if (e.target === logModal) closeLogModal();
+  });
+
+  // ===== Keyboard: Escape closes modal =====
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && logModal.classList.contains('show')) {
+      closeLogModal();
+    }
+  });
+
+  // ===== Check session on page load =====
+  apiFetch('/api/config').then(function () {
+    // Already logged in
+    handleLoginSuccess();
+  }).catch(function (err) {
+    if (err.message === 'Session expired. Please login again.') {
+      // Show login page (default)
+    }
+    // Otherwise stay on login
+  });
+
+})();
+</script>
+</body>
+</html>
