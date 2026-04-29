@@ -52,15 +52,17 @@ def api_config():
 def api_tasks():
     if request.method == 'POST':
         data = request.get_json()
-        if not data.get('name') or not data.get('script_path') or not data.get('accept_path'):
-            return jsonify({'error': 'Missing required fields'}), 400
+        if not data.get('name'):
+            return jsonify({'error': 'Task name is required'}), 400
         task_id = models.create_task(
             name=data['name'],
             detail=data.get('detail', ''),
-            script_path=data['script_path'],
-            accept_path=data['accept_path'],
-            assignee=data.get('assignee', ''),
+            script_path=data.get('script_path', ''),
+            accept_path=data.get('accept_path', ''),
+            user=data.get('user', ''),
             design=data.get('design', ''),
+            start_date=data.get('start_date', ''),
+            end_date=data.get('end_date', ''),
         )
         engine.submit_task(task_id)
         return jsonify({'id': task_id}), 201
@@ -81,8 +83,10 @@ def api_copy_task(task_id):
         detail=original['detail'],
         script_path=original['script_path'],
         accept_path=original['accept_path'],
-        assignee=original['assignee'],
+        user=original['user'],
         design=original['design'],
+        start_date=original.get('start_date', ''),
+        end_date=original.get('end_date', ''),
     )
     engine.submit_task(new_id)
     return jsonify({'id': new_id}), 201

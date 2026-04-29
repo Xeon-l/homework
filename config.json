@@ -1,7 +1,9 @@
 {
   "bindings": [
-    {"assignee": "user1", "designs": ["芯片A", "芯片B"]},
-    {"assignee": "user2", "designs": ["芯片A"]}
+    {"user": "zhangsan", "designs": ["芯片A", "芯片B", "芯片C"]},
+    {"user": "lisi", "designs": ["芯片A", "芯片D"]},
+    {"user": "wangwu", "designs": ["芯片B", "芯片D", "芯片E"]},
+    {"user": "zhaoliu", "designs": ["芯片C", "芯片E"]}
   ],
   "password": "admin123"
 }

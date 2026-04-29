@@ -15,16 +15,25 @@ def _run_task(task_id):
     task = models.get_task(task_id)
     if not task:
         return
+
+    script = task['script_path'] or ''
+    accept = task['accept_path'] or ''
+
+    # Skip execution if no script path
+    if not script.strip():
+        now = datetime.now(timezone.utc).isoformat()
+        models.update_task(task_id, status='Success', log='(no script)',
+                           updated_at=now)
+        return
+
     now = datetime.now(timezone.utc).isoformat()
     models.update_task(task_id, status='Running', updated_at=now)
 
-    script = task['script_path']
-    accept = task['accept_path']
     script_dir = os.path.dirname(os.path.abspath(script)) if os.path.dirname(script) else os.getcwd()
     if not os.path.isdir(script_dir):
         script_dir = os.getcwd()
 
-    if not os.path.isabs(accept):
+    if accept and not os.path.isabs(accept):
         accept = os.path.join(script_dir, accept)
 
     log = ''
@@ -35,19 +44,24 @@ def _run_task(task_id):
         )
         stdout, _ = proc.communicate(timeout=3600)
         log = stdout or ''
-        if proc.returncode == 0 and os.path.exists(accept):
+
+        ok = proc.returncode == 0
+        if accept:
+            ok = ok and os.path.exists(accept)
+
+        if ok:
             status = 'Success'
         else:
             status = 'Failed'
             if proc.returncode != 0:
                 log += f'\n[Exit code: {proc.returncode}]'
-            if not os.path.exists(accept):
+            if accept and not os.path.exists(accept):
                 log += f'\n[Accept file not found: {accept}]'
     except subprocess.TimeoutExpired:
         proc.kill()
         proc.communicate()
         status = 'Failed'
-        log = f'[Task timed out after 3600s]'
+        log = '[Task timed out after 3600s]'
     except Exception as e:
         status = 'Failed'
         log = str(e)

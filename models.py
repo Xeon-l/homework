@@ -19,6 +19,16 @@ def get_db():
     return conn
 
 
+def _migrate(conn):
+    cols = {row[1] for row in conn.execute('PRAGMA table_info(task)').fetchall()}
+    if 'user' not in cols and 'assignee' in cols:
+        conn.execute('ALTER TABLE task RENAME COLUMN assignee TO user')
+    if 'start_date' not in cols:
+        conn.execute('ALTER TABLE task ADD COLUMN start_date TEXT DEFAULT ""')
+    if 'end_date' not in cols:
+        conn.execute('ALTER TABLE task ADD COLUMN end_date TEXT DEFAULT ""')
+
+
 def init_db():
     try:
         conn = get_db()
@@ -26,16 +36,19 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             detail TEXT DEFAULT '',
-            script_path TEXT NOT NULL,
-            accept_path TEXT NOT NULL,
-            assignee TEXT NOT NULL,
+            script_path TEXT DEFAULT '',
+            accept_path TEXT DEFAULT '',
+            "user" TEXT NOT NULL DEFAULT '',
             design TEXT NOT NULL,
-            status TEXT DEFAULT 'Pending'
+            status TEXT DEFAULT 'Running'
                 CHECK(status IN ('Pending','Running','Success','Failed')),
             log TEXT DEFAULT '',
+            start_date TEXT DEFAULT '',
+            end_date TEXT DEFAULT '',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         )''')
+        _migrate(conn)
         conn.commit()
         conn.close()
     except sqlite3.Error as e:
@@ -58,12 +71,16 @@ def verify_password(password):
     return load_config().get('password', '') == password
 
 
-def create_task(name, detail, script_path, accept_path, assignee, design):
+def create_task(name, detail, script_path, accept_path, user, design,
+                start_date='', end_date=''):
     now = datetime.now(timezone.utc).isoformat()
     conn = get_db()
     cur = conn.execute(
-        'INSERT INTO task (name, detail, script_path, accept_path, assignee, design, status, log, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        (name, detail, script_path, accept_path, assignee, design, 'Pending', '', now, now)
+        'INSERT INTO task (name, detail, script_path, accept_path, "user", design,'
+        ' status, log, start_date, end_date, created_at, updated_at)'
+        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        (name, detail, script_path, accept_path, user, design,
+         'Running', '', start_date, end_date, now, now)
     )
     task_id = cur.lastrowid
     conn.commit()
@@ -74,7 +91,9 @@ def create_task(name, detail, script_path, accept_path, assignee, design):
 def get_tasks(status=None):
     conn = get_db()
     if status:
-        rows = conn.execute('SELECT * FROM task WHERE status = ? ORDER BY id DESC', (status,)).fetchall()
+        rows = conn.execute(
+            'SELECT * FROM task WHERE status = ? ORDER BY id DESC', (status,)
+        ).fetchall()
     else:
         rows = conn.execute('SELECT * FROM task ORDER BY id DESC').fetchall()
     conn.close()
@@ -89,7 +108,8 @@ def get_task(task_id):
 
 
 _TASK_COLUMNS = {'name', 'detail', 'script_path', 'accept_path',
-                  'assignee', 'design', 'status', 'log', 'updated_at'}
+                  'user', 'design', 'status', 'log',
+                  'start_date', 'end_date', 'updated_at'}
 
 
 def update_task(task_id, **kwargs):
@@ -98,7 +118,10 @@ def update_task(task_id, **kwargs):
     bad = set(kwargs) - _TASK_COLUMNS
     if bad:
         raise ValueError(f'Invalid columns: {bad}')
-    sets = ', '.join(f'{k} = ?' for k in kwargs)
+    # quote "user" since it's a reserved word
+    sets = ', '.join(
+        f'"{k}" = ?' if k == 'user' else f'{k} = ?' for k in kwargs
+    )
     vals = list(kwargs.values()) + [task_id]
     conn = get_db()
     conn.execute(f'UPDATE task SET {sets} WHERE id = ?', vals)
@@ -115,7 +138,9 @@ def delete_task(task_id):
 
 def get_tasks_since(timestamp):
     conn = get_db()
-    rows = conn.execute('SELECT * FROM task WHERE updated_at > ? ORDER BY id DESC', (timestamp,)).fetchall()
+    rows = conn.execute(
+        'SELECT * FROM task WHERE updated_at > ? ORDER BY id DESC', (timestamp,)
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -124,6 +149,8 @@ def get_status_counts():
     conn = get_db()
     counts = {}
     for s in ['Pending', 'Running', 'Success', 'Failed']:
-        counts[s] = conn.execute('SELECT COUNT(*) FROM task WHERE status = ?', (s,)).fetchone()[0]
+        counts[s] = conn.execute(
+            'SELECT COUNT(*) FROM task WHERE status = ?', (s,)
+        ).fetchone()[0]
     conn.close()
     return counts
