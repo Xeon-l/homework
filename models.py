@@ -88,9 +88,16 @@ def get_task(task_id):
     return dict(row) if row else None
 
 
+_TASK_COLUMNS = {'name', 'detail', 'script_path', 'accept_path',
+                  'assignee', 'design', 'status', 'log', 'updated_at'}
+
+
 def update_task(task_id, **kwargs):
     if not kwargs:
         return
+    bad = set(kwargs) - _TASK_COLUMNS
+    if bad:
+        raise ValueError(f'Invalid columns: {bad}')
     sets = ', '.join(f'{k} = ?' for k in kwargs)
     vals = list(kwargs.values()) + [task_id]
     conn = get_db()
