@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, session, redirect, url_for, render_template
 from functools import wraps
+from datetime import datetime, timezone
 import os
 import models
 import engine
@@ -92,20 +93,50 @@ def api_copy_task(task_id):
     return jsonify({'id': new_id}), 201
 
 
-@app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+@app.route('/api/tasks/<int:task_id>', methods=['DELETE', 'PUT'])
 @login_required
-def api_delete_task(task_id):
-    models.delete_task(task_id)
+def api_task(task_id):
+    if request.method == 'DELETE':
+        models.delete_task(task_id)
+        return jsonify({'ok': True})
+    # PUT — update task fields (status, etc.)
+    data = request.get_json()
+    kwargs = {}
+    if 'status' in data:
+        kwargs['status'] = data['status']
+    if kwargs:
+        now = datetime.now(timezone.utc).isoformat()
+        kwargs['updated_at'] = now
+        models.update_task(task_id, **kwargs)
     return jsonify({'ok': True})
 
 
-@app.route('/api/tasks/<int:task_id>/log')
+@app.route('/api/tasks/<int:task_id>/items', methods=['GET', 'PUT'])
 @login_required
-def api_task_log(task_id):
-    task = models.get_task(task_id)
-    if not task:
-        return jsonify({'error': 'Task not found'}), 404
-    return jsonify({'log': task['log']})
+def api_task_items(task_id):
+    if request.method == 'GET':
+        task = models.get_task(task_id)
+        if not task:
+            return jsonify({'error': 'Task not found'}), 404
+        items = models.get_task_items(task_id)
+        return jsonify({'task': task, 'items': items})
+
+    # PUT — batch update item status/notes, then recalc task status
+    data = request.get_json()
+    item_id = data.get('item_id')
+    if not item_id:
+        return jsonify({'error': 'item_id is required'}), 400
+    kwargs = {}
+    if 'status' in data:
+        kwargs['status'] = data['status']
+    if 'notes' in data:
+        kwargs['notes'] = data['notes']
+    if kwargs:
+        now = datetime.now(timezone.utc).isoformat()
+        kwargs['updated_at'] = now
+        models.update_task_item(item_id, **kwargs)
+        models._recalc_task_status(task_id)
+    return jsonify({'ok': True})
 
 
 @app.route('/api/poll')

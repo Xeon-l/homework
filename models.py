@@ -27,6 +27,18 @@ def _migrate(conn):
         conn.execute('ALTER TABLE task ADD COLUMN start_date TEXT DEFAULT ""')
     if 'end_date' not in cols:
         conn.execute('ALTER TABLE task ADD COLUMN end_date TEXT DEFAULT ""')
+    # task_item table added in a later migration
+    conn.execute('''CREATE TABLE IF NOT EXISTS task_item (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id INTEGER NOT NULL,
+        design TEXT NOT NULL DEFAULT '',
+        "user" TEXT NOT NULL DEFAULT '',
+        status TEXT DEFAULT 'Running'
+            CHECK(status IN ('Pending','Running','Success','Failed')),
+        notes TEXT DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )''')
 
 
 def init_db():
@@ -45,6 +57,17 @@ def init_db():
             log TEXT DEFAULT '',
             start_date TEXT DEFAULT '',
             end_date TEXT DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS task_item (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL,
+            design TEXT NOT NULL DEFAULT '',
+            "user" TEXT NOT NULL DEFAULT '',
+            status TEXT DEFAULT 'Running'
+                CHECK(status IN ('Pending','Running','Success','Failed')),
+            notes TEXT DEFAULT '',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         )''')
@@ -85,7 +108,80 @@ def create_task(name, detail, script_path, accept_path, user, design,
     task_id = cur.lastrowid
     conn.commit()
     conn.close()
+    designs = [d.strip() for d in design.split(',') if d.strip()]
+    create_task_items(task_id, designs, user)
     return task_id
+
+
+def create_task_items(task_id, designs, task_user):
+    if not designs:
+        return
+    bindings = get_bindings()
+    now = datetime.now(timezone.utc).isoformat()
+    conn = get_db()
+    for d in designs:
+        # Prefer task_user if they handle this design, else find first matching user
+        item_user = task_user
+        task_user_handles = any(
+            b['user'] == task_user and d in b.get('designs', []) for b in bindings
+        )
+        if not task_user_handles:
+            for b in bindings:
+                if d in b.get('designs', []):
+                    item_user = b['user']
+                    break
+        conn.execute(
+            'INSERT INTO task_item (task_id, design, "user", status, notes,'
+            ' created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (task_id, d, item_user, 'Running', '', now, now)
+        )
+    conn.commit()
+    conn.close()
+
+
+def get_task_items(task_id):
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT * FROM task_item WHERE task_id = ? ORDER BY id', (task_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+_ITEM_COLUMNS = {'status', 'notes', 'updated_at'}
+
+
+def update_task_item(item_id, **kwargs):
+    if not kwargs:
+        return
+    bad = set(kwargs) - _ITEM_COLUMNS
+    if bad:
+        raise ValueError(f'Invalid columns: {bad}')
+    sets = ', '.join(f'{k} = ?' for k in kwargs)
+    vals = list(kwargs.values()) + [item_id]
+    conn = get_db()
+    conn.execute(f'UPDATE task_item SET {sets} WHERE id = ?', vals)
+    conn.commit()
+    conn.close()
+
+
+def _recalc_task_status(task_id):
+    items = get_task_items(task_id)
+    if not items:
+        return
+    statuses = {it['status'] for it in items}
+    if statuses == {'Success'}:
+        new_status = 'Success'
+    elif 'Failed' in statuses:
+        new_status = 'Failed'
+    elif 'Running' in statuses:
+        new_status = 'Running'
+    elif statuses == {'Pending'}:
+        new_status = 'Pending'
+    else:
+        new_status = 'Running'
+    now = datetime.now(timezone.utc).isoformat()
+    update_task(task_id, status=new_status, updated_at=now)
 
 
 def get_tasks(status=None):
@@ -131,6 +227,7 @@ def update_task(task_id, **kwargs):
 
 def delete_task(task_id):
     conn = get_db()
+    conn.execute('DELETE FROM task_item WHERE task_id = ?', (task_id,))
     conn.execute('DELETE FROM task WHERE id = ?', (task_id,))
     conn.commit()
     conn.close()

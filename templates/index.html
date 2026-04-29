@@ -60,7 +60,9 @@ body {
 
 /* ===== Cards ===== */
 .card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
-.card h2 { font-size: 16px; margin-bottom: 16px; color: var(--text); }
+.card h2 { font-size: 16px; color: var(--text); }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.card-header h2 { margin-bottom: 0; }
 
 /* ===== Form ===== */
 .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -100,12 +102,18 @@ body {
 .btn-danger:hover:not(:disabled) { background: #dc2626; }
 .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
 .btn-outline:hover:not(:disabled) { background: var(--chip-bg); }
-.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
 .btn-logout {
   background: transparent; border: 1px solid var(--border); color: var(--text-secondary);
   padding: 6px 16px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; transition: all 0.2s;
 }
 .btn-logout:hover { border-color: var(--failed); color: var(--failed); }
+.btn-back {
+  background: transparent; border: 1px solid var(--primary); color: var(--primary);
+  padding: 6px 14px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.btn-back:hover { background: #eef1ff; }
 
 /* ===== Stats Row ===== */
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
@@ -130,19 +138,11 @@ thead th {
 tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 tbody tr:hover { background: #f8f9ff; }
 tbody tr:last-child td { border-bottom: none; }
-.col-id { width: 50px; }
-.col-name { min-width: 120px; }
-.col-user { width: 80px; }
-.col-design { width: 100px; }
-.col-status { width: 80px; }
-.col-dates { width: 100px; font-size: 11px; color: var(--text-secondary); }
-.col-actions { width: 170px; }
+.col-name { min-width: 140px; }
+.col-status { width: 110px; }
+.col-dates { min-width: 180px; font-size: 12px; color: var(--text-secondary); }
+.col-actions { width: 80px; text-align: center; }
 .task-name { font-weight: 500; }
-.design-tags { display: flex; flex-wrap: wrap; gap: 3px; }
-.design-tag {
-  display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
-  background: var(--chip-bg); color: var(--text-secondary);
-}
 
 /* ===== Status Badges ===== */
 .status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
@@ -151,8 +151,12 @@ tbody tr:last-child td { border-bottom: none; }
 .status-badge.success  { background: #d1fae5; color: #065f46; }
 .status-badge.failed   { background: #fee2e2; color: #991b1b; }
 
-/* ===== Actions ===== */
-.action-btns { display: flex; gap: 4px; }
+/* ===== Status Select ===== */
+.status-select {
+  padding: 3px 6px; border: 1px solid var(--border); border-radius: 3px;
+  font-size: 12px; font-weight: 600; cursor: pointer; background: #fff;
+}
+.status-select option { font-weight: 500; }
 
 /* ===== Empty State ===== */
 .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
@@ -168,29 +172,51 @@ tbody tr:last-child td { border-bottom: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { margin-left: 12px; font-size: 14px; color: var(--text-secondary); }
 
-/* ===== Log Modal ===== */
-.modal-overlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-  align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+/* ===== Detail View ===== */
+#detail-view { display: none; }
+.detail-page-title {
+  font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 16px;
+  padding-bottom: 12px; border-bottom: 2px solid var(--border);
 }
-.modal-overlay.show { display: flex; }
-.modal-content {
-  background: #1e1e2e; border-radius: var(--radius); width: 100%; max-width: 720px;
-  max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+.detail-summary { margin-bottom: 0; }
+.detail-summary .summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px 16px; font-size: 13px;
 }
-.modal-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 20px; border-bottom: 1px solid #333;
+.detail-summary .summary-item { display: flex; }
+.detail-summary .summary-label { color: var(--text-secondary); min-width: 70px; flex-shrink: 0; }
+.detail-summary .summary-value { color: var(--text); }
+
+.detail-actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+
+/* ===== Excel-style Table ===== */
+.excel-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.excel-table th, .excel-table td {
+  border: 1px solid #d1d5db; padding: 6px 8px; vertical-align: middle;
 }
-.modal-header h3 { font-size: 16px; color: #e0e0e0; }
-.modal-close { background: none; border: none; color: #888; font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px; }
-.modal-close:hover { color: #fff; }
-.modal-body { padding: 20px; overflow-y: auto; flex: 1; }
-.modal-body pre {
-  font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  font-size: 13px; line-height: 1.6; color: #4ade80; white-space: pre-wrap; word-break: break-all; margin: 0;
+.excel-table thead th {
+  background: #e5e7eb; color: var(--text); font-weight: 600; font-size: 12px;
+  text-align: left; border-bottom: 2px solid #9ca3af;
 }
-.modal-body .log-empty { color: #666; font-style: italic; text-align: center; padding: 40px 0; }
+.excel-table tbody td { background: #fff; }
+.excel-table tbody tr:nth-child(even) td { background: #f9fafb; }
+.excel-table tbody tr:hover td { background: #eef1ff; }
+.excel-table .col-xl-design { min-width: 100px; }
+.excel-table .col-xl-user { width: 90px; }
+.excel-table .col-xl-status { width: 120px; }
+.excel-table .col-xl-notes { min-width: 160px; }
+.excel-table select {
+  width: 100%; border: 1px solid transparent; background: transparent;
+  padding: 3px 4px; font-size: 13px; border-radius: 2px; cursor: pointer;
+}
+.excel-table select:focus { border-color: var(--primary); outline: none; background: #fff; }
+.excel-table input {
+  width: 100%; border: 1px solid transparent; background: transparent;
+  padding: 3px 6px; font-size: 13px; border-radius: 2px;
+}
+.excel-table input:focus { border-color: var(--primary); outline: none; background: #fff; }
+.excel-table input::placeholder { color: #c0c0c0; font-style: italic; }
+.excel-empty { text-align: center; padding: 24px; color: var(--text-secondary); font-size: 13px; }
 
 /* ===== Form Error ===== */
 .form-error { color: var(--failed); font-size: 13px; margin-top: 8px; min-height: 20px; }
@@ -240,14 +266,14 @@ tbody tr:last-child td { border-bottom: none; }
 
   <!-- Status Bar -->
   <div class="status-bar">
-    <div class="user-info">Logged in as <strong id="user-name">User</strong></div>
+    <div class="user-info">Logged in</div>
     <button id="logout-btn" class="btn-logout">Logout</button>
   </div>
 
   <!-- Create Task Form -->
   <div class="card">
     <h2>Create Task</h2>
-    <form id="task-form">
+    <form id="task-form" style="margin-top:16px;">
       <div class="form-row">
         <div class="form-group">
           <label>Name <span class="required">*</span></label>
@@ -313,49 +339,75 @@ tbody tr:last-child td { border-bottom: none; }
     </div>
   </div>
 
-  <!-- Task Table -->
-  <div class="card">
-    <h2>Tasks</h2>
-    <div id="table-loading" class="loading-overlay show">
-      <div class="loading-spinner"></div>
-      <span class="loading-text">Loading tasks...</span>
-    </div>
-    <div class="table-wrapper" id="table-wrapper" style="display:none;">
-      <table>
-        <thead>
-          <tr>
-            <th class="col-id">ID</th>
-            <th class="col-name">Name</th>
-            <th class="col-user">User</th>
-            <th class="col-design">Design</th>
-            <th class="col-status">Status</th>
-            <th class="col-dates">Dates</th>
-            <th class="col-actions">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="task-tbody"></tbody>
-      </table>
-    </div>
-    <div id="empty-state" class="empty-state" style="display:none;">
-      <p>No tasks yet. Create one above.</p>
+  <!-- ===== MAIN VIEW: Task Table ===== -->
+  <div id="main-view">
+    <div class="card">
+      <div class="card-header">
+        <h2>Tasks</h2>
+        <button class="btn btn-outline btn-sm" id="refresh-btn" onclick="loadTasks()">Refresh</button>
+      </div>
+      <div id="table-loading" class="loading-overlay show">
+        <div class="loading-spinner"></div>
+        <span class="loading-text">Loading tasks...</span>
+      </div>
+      <div class="table-wrapper" id="table-wrapper" style="display:none;">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-name">Name</th>
+              <th class="col-status">Status</th>
+              <th class="col-dates">Dates</th>
+              <th class="col-actions">Details</th>
+            </tr>
+          </thead>
+          <tbody id="task-tbody"></tbody>
+        </table>
+      </div>
+      <div id="empty-state" class="empty-state" style="display:none;">
+        <p>No tasks yet. Create one above.</p>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ========== Log Modal ========== -->
-<div id="log-modal" class="modal-overlay">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="log-modal-title">Task Log</h3>
-      <button id="log-modal-close" class="modal-close">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div id="log-loading" class="loading-overlay show">
-        <div class="loading-spinner"></div>
-        <span class="loading-text">Loading log...</span>
+  <!-- ===== DETAIL VIEW ===== -->
+  <div id="detail-view">
+    <div class="detail-page-title">Task Detail</div>
+
+    <div class="card detail-summary" id="detail-summary-card">
+      <div class="card-header">
+        <h2 id="detail-title">Task</h2>
+        <button class="btn-back" onclick="hideDetail()">&#8592; Back to List</button>
       </div>
-      <pre id="log-content" style="display:none;"></pre>
-      <div id="log-empty" class="log-empty" style="display:none;">No log output.</div>
+      <div class="summary-grid" id="detail-summary-grid"></div>
+      <div class="detail-actions">
+        <button class="btn btn-outline btn-sm" id="detail-copy-btn">Copy</button>
+        <button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Design Items</h2>
+        <span style="font-size:12px;color:var(--text-secondary);">Status and notes editable inline</span>
+      </div>
+      <div id="items-loading" class="loading-overlay show">
+        <div class="loading-spinner"></div>
+        <span class="loading-text">Loading items...</span>
+      </div>
+      <div class="table-wrapper" id="items-table-wrapper" style="display:none;">
+        <table class="excel-table">
+          <thead>
+            <tr>
+              <th class="col-xl-design">Design</th>
+              <th class="col-xl-user">User</th>
+              <th class="col-xl-status">Status</th>
+              <th class="col-xl-notes">Notes</th>
+            </tr>
+          </thead>
+          <tbody id="items-tbody"></tbody>
+        </table>
+        <div id="items-empty" class="excel-empty" style="display:none;">No designs for this task.</div>
+      </div>
     </div>
   </div>
 </div>
@@ -365,11 +417,11 @@ tbody tr:last-child td { border-bottom: none; }
   'use strict';
 
   // ===== State =====
-  var bindings = [];           // {user, designs:[]}
-  var designSet = [];          // flat unique design names
+  var bindings = [];
+  var designSet = [];
   var selectedDesigns = [];
-  var pollTimer = null;
   var isLoggedIn = false;
+  var currentTaskId = null;
 
   // ===== DOM refs =====
   var $ = function (id) { return document.getElementById(id); };
@@ -402,13 +454,18 @@ tbody tr:last-child td { border-bottom: none; }
   var tableLoading  = $('table-loading');
   var tableWrapper  = $('table-wrapper');
   var emptyState    = $('empty-state');
+  var refreshBtn    = $('refresh-btn');
 
-  var logModal      = $('log-modal');
-  var logModalTitle = $('log-modal-title');
-  var logContent    = $('log-content');
-  var logLoading    = $('log-loading');
-  var logEmpty      = $('log-empty');
-  var logClose      = $('log-modal-close');
+  var mainView      = $('main-view');
+  var detailView    = $('detail-view');
+  var detailTitle   = $('detail-title');
+  var detailSummaryGrid = $('detail-summary-grid');
+  var detailCopyBtn = $('detail-copy-btn');
+  var detailDeleteBtn = $('detail-delete-btn');
+  var itemsLoading  = $('items-loading');
+  var itemsTableWrapper = $('items-table-wrapper');
+  var itemsTbody    = $('items-tbody');
+  var itemsEmpty    = $('items-empty');
 
   var toastEl       = $('toast');
 
@@ -460,11 +517,11 @@ tbody tr:last-child td { border-bottom: none; }
 
   function handleLogout() {
     isLoggedIn = false;
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     dashboard.style.display = 'none';
     loginPage.style.display = 'flex';
     loginPassword.value = '';
     loginError.textContent = '';
+    currentTaskId = null;
     fetch('/login', { method: 'DELETE' }).catch(function () {});
   }
 
@@ -484,11 +541,36 @@ tbody tr:last-child td { border-bottom: none; }
     handleLogout();
   });
 
+  // ===== Hash routing =====
+  function getHashTaskId() {
+    var m = window.location.hash.match(/^#\/task\/(\d+)$/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  function navigateToTask(taskId) {
+    window.location.hash = '#/task/' + taskId;
+  }
+
+  function navigateToList() {
+    window.location.hash = '#/';
+  }
+
+  function handleHashChange() {
+    if (!isLoggedIn) return;
+    var taskId = getHashTaskId();
+    if (taskId) {
+      showDetail(taskId);
+    } else {
+      showMainList();
+    }
+  }
+
+  window.addEventListener('hashchange', handleHashChange);
+
   // ===== Dashboard Init =====
   function initDashboard() {
     loadConfig(function () { renderChips(); autoFillUser(); });
-    loadTasks();
-    startPolling();
+    handleHashChange();
   }
 
   // ===== Config =====
@@ -585,14 +667,28 @@ tbody tr:last-child td { border-bottom: none; }
 
   // ===== Load Tasks =====
   function loadTasks() {
+    refreshBtn.disabled = true;
     tableLoading.classList.add('show');
     tableWrapper.style.display = 'none';
     emptyState.style.display = 'none';
     apiFetch('/api/tasks').then(function (data) {
       renderTasks(data.tasks || []);
+      updateStats(data.tasks || []);
     }).catch(function () {
       tableLoading.classList.remove('show');
+    }).finally(function () {
+      refreshBtn.disabled = false;
     });
+  }
+
+  function statusSelectHtml(taskId, current) {
+    var opts = ['Pending', 'Running', 'Success', 'Failed'];
+    var s = '<select class="status-select" onchange="window._updateTaskStatus(' + taskId + ',this.value)">';
+    for (var i = 0; i < opts.length; i++) {
+      s += '<option value="' + opts[i] + '"' + (opts[i] === (current || 'Running') ? ' selected' : '') + '>' + opts[i] + '</option>';
+    }
+    s += '</select>';
+    return s;
   }
 
   function renderTasks(tasks) {
@@ -607,38 +703,42 @@ tbody tr:last-child td { border-bottom: none; }
     emptyState.style.display = 'none';
     var html = '';
     tasks.forEach(function (t) {
-      var statusClass = (t.status || 'Running').toLowerCase();
-      var statusText = t.status || 'Running';
-
-      var designs = t.design ? t.design.split(',').filter(function (d) { return d.trim(); }) : [];
-      var designHtml = '';
-      if (designs.length > 0) {
-        designHtml = '<div class="design-tags">';
-        designs.forEach(function (d) { designHtml += '<span class="design-tag">' + esc(d.trim()) + '</span>'; });
-        designHtml += '</div>';
-      } else {
-        designHtml = '<span style="color:#9ca3af;font-size:11px;">--</span>';
-      }
-
       var startStr = t.start_date || '--';
       var endStr = t.end_date || '--';
+      var dateHtml = esc(startStr) + '  ~  ' + esc(endStr);
 
       html += '<tr>' +
-        '<td class="col-id">' + t.id + '</td>' +
         '<td class="col-name"><span class="task-name">' + esc(t.name) + '</span></td>' +
-        '<td class="col-user">' + esc(t.user || '--') + '</td>' +
-        '<td class="col-design">' + designHtml + '</td>' +
-        '<td class="col-status"><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
-        '<td class="col-dates">' + esc(startStr) + ' ~ ' + esc(endStr) + '</td>' +
-        '<td class="col-actions"><div class="action-btns">' +
-          '<button class="btn btn-outline btn-sm" onclick="window._viewLog(' + t.id + ')">Log</button>' +
-          '<button class="btn btn-outline btn-sm" onclick="window._copyTask(' + t.id + ')">Copy</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="window._deleteTask(' + t.id + ')">Delete</button>' +
-        '</div></td>' +
+        '<td class="col-status">' + statusSelectHtml(t.id, t.status || 'Running') + '</td>' +
+        '<td class="col-dates">' + dateHtml + '</td>' +
+        '<td class="col-actions">' +
+          '<button class="btn btn-outline btn-sm" onclick="window._showDetail(' + t.id + ')">Details</button>' +
+        '</td>' +
       '</tr>';
     });
     taskTbody.innerHTML = html;
   }
+
+  function updateStats(tasks) {
+    var counts = { Pending: 0, Running: 0, Success: 0, Failed: 0 };
+    tasks.forEach(function (t) { if (counts.hasOwnProperty(t.status)) counts[t.status]++; });
+    statPending.textContent = counts.Pending;
+    statRunning.textContent = counts.Running;
+    statSuccess.textContent = counts.Success;
+    statFailed.textContent = counts.Failed;
+  }
+
+  window._updateTaskStatus = function (taskId, newStatus) {
+    apiFetch('/api/tasks/' + taskId, {
+      method: 'PUT',
+      body: { status: newStatus }
+    }).then(function () {
+      showToast('Task status updated', 'success');
+    }).catch(function (err) {
+      showToast('Failed: ' + err.message, 'error');
+      loadTasks();
+    });
+  };
 
   function esc(str) {
     if (!str) return '';
@@ -647,55 +747,141 @@ tbody tr:last-child td { border-bottom: none; }
     return d.innerHTML;
   }
 
-  // ===== Actions =====
-  window._viewLog = function (taskId) {
-    logModalTitle.textContent = 'Task #' + taskId + ' Log';
-    logContent.style.display = 'none'; logEmpty.style.display = 'none';
-    logLoading.classList.add('show'); logModal.classList.add('show');
-    apiFetch('/api/tasks/' + taskId + '/log').then(function (data) {
-      logLoading.classList.remove('show');
-      if (data.log && data.log.trim()) {
-        logContent.textContent = data.log; logContent.style.display = 'block';
-        logEmpty.style.display = 'none';
-      } else {
-        logContent.style.display = 'none'; logEmpty.style.display = 'block';
-      }
+  // ===== Main / Detail view switching =====
+  function showMainList() {
+    currentTaskId = null;
+    mainView.style.display = 'block';
+    detailView.style.display = 'none';
+    loadTasks();
+  }
+
+  window._showDetail = function (taskId) {
+    navigateToTask(taskId);
+  };
+
+  function showDetail(taskId) {
+    currentTaskId = taskId;
+    mainView.style.display = 'none';
+    detailView.style.display = 'block';
+    loadTaskDetail(taskId);
+    loadItems(taskId);
+  }
+
+  function hideDetail() {
+    navigateToList();
+  }
+
+  // ===== Task Detail =====
+  function loadTaskDetail(taskId) {
+    apiFetch('/api/tasks/' + taskId + '/items').then(function (data) {
+      var t = data.task;
+      detailTitle.textContent = 'Task #' + t.id + ' — ' + t.name;
+      detailCopyBtn.onclick = function () { copyTask(taskId); };
+      detailDeleteBtn.onclick = function () { deleteTask(taskId); };
+
+      var designs = t.design ? t.design.split(',').filter(function (d) { return d.trim(); }) : [];
+      var html = '';
+      html += '<div class="summary-item"><span class="summary-label">ID:</span><span class="summary-value">' + t.id + '</span></div>';
+      html += '<div class="summary-item"><span class="summary-label">Name:</span><span class="summary-value">' + esc(t.name) + '</span></div>';
+      html += '<div class="summary-item"><span class="summary-label">Status:</span><span class="summary-value"><span class="status-badge ' + (t.status || 'Running').toLowerCase() + '">' + (t.status || 'Running') + '</span></span></div>';
+      html += '<div class="summary-item"><span class="summary-label">User:</span><span class="summary-value">' + esc(t.user || '--') + '</span></div>';
+      html += '<div class="summary-item"><span class="summary-label">Design:</span><span class="summary-value">' + (designs.length > 0 ? esc(designs.join(', ')) : '--') + '</span></div>';
+      html += '<div class="summary-item"><span class="summary-label">Dates:</span><span class="summary-value">' + esc(t.start_date || '--') + ' ~ ' + esc(t.end_date || '--') + '</span></div>';
+      html += '<div class="summary-item"><span class="summary-label">Script:</span><span class="summary-value">' + esc(t.script_path || '(none)') + '</span></div>';
+      html += '<div class="summary-item"><span class="summary-label">Accept:</span><span class="summary-value">' + esc(t.accept_path || '(none)') + '</span></div>';
+      html += '<div class="summary-item"><span class="summary-label">Detail:</span><span class="summary-value">' + esc(t.detail || '--') + '</span></div>';
+      detailSummaryGrid.innerHTML = html;
     }).catch(function (err) {
-      logLoading.classList.remove('show');
-      logContent.textContent = 'Error: ' + err.message;
-      logContent.style.display = 'block'; logEmpty.style.display = 'none';
+      showToast('Failed to load task: ' + err.message, 'error');
+      hideDetail();
+    });
+  }
+
+  function loadItems(taskId) {
+    itemsLoading.classList.add('show');
+    itemsTableWrapper.style.display = 'none';
+    itemsEmpty.style.display = 'none';
+    apiFetch('/api/tasks/' + taskId + '/items').then(function (data) {
+      renderItems(data.items || [], taskId);
+    }).catch(function () {
+      itemsLoading.classList.remove('show');
+    });
+  }
+
+  function renderItems(items, taskId) {
+    itemsLoading.classList.remove('show');
+    if (!items || items.length === 0) {
+      itemsTableWrapper.style.display = 'none';
+      itemsEmpty.style.display = 'block';
+      itemsTbody.innerHTML = '';
+      return;
+    }
+    itemsTableWrapper.style.display = 'block';
+    itemsEmpty.style.display = 'none';
+    var html = '';
+    items.forEach(function (it) {
+      html += '<tr>' +
+        '<td>' + esc(it.design) + '</td>' +
+        '<td>' + esc(it.user || '--') + '</td>' +
+        '<td><select onchange="window._updateItemStatus(' + taskId + ',' + it.id + ',this.value)">' +
+          '<option value="Pending"' + (it.status === 'Pending' ? ' selected' : '') + '>Pending</option>' +
+          '<option value="Running"' + (it.status === 'Running' ? ' selected' : '') + '>Running</option>' +
+          '<option value="Success"' + (it.status === 'Success' ? ' selected' : '') + '>Success</option>' +
+          '<option value="Failed"'  + (it.status === 'Failed'  ? ' selected' : '') + '>Failed</option>' +
+        '</select></td>' +
+        '<td><input type="text" value="' + escAttr(it.notes || '') + '" placeholder="Add note..."' +
+          ' onblur="window._updateItemNotes(' + taskId + ',' + it.id + ',this.value)"' +
+          ' onkeydown="if(event.key===\'Enter\'){this.blur();}"></td>' +
+      '</tr>';
+    });
+    itemsTbody.innerHTML = html;
+  }
+
+  window._updateItemStatus = function (taskId, itemId, newStatus) {
+    apiFetch('/api/tasks/' + taskId + '/items', {
+      method: 'PUT',
+      body: { item_id: itemId, status: newStatus }
+    }).then(function () {
+      showToast('Status updated', 'success');
+      loadTaskDetail(taskId);
+      loadItems(taskId);
+    }).catch(function (err) {
+      showToast('Failed: ' + err.message, 'error');
+      loadItems(taskId);
     });
   };
 
-  window._copyTask = function (taskId) {
-    apiFetch('/api/tasks/' + taskId + '/copy', { method: 'POST' }).then(function () {
-      showToast('Task copied', 'success'); loadTasks();
-    }).catch(function (err) { showToast('Failed: ' + err.message, 'error'); });
+  window._updateItemNotes = function (taskId, itemId, newNotes) {
+    apiFetch('/api/tasks/' + taskId + '/items', {
+      method: 'PUT',
+      body: { item_id: itemId, notes: newNotes }
+    }).then(function () {
+      /* silent */
+    }).catch(function (err) {
+      showToast('Failed: ' + err.message, 'error');
+    });
   };
 
-  window._deleteTask = function (taskId) {
+  function escAttr(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ===== Actions (detail panel) =====
+  function copyTask(taskId) {
+    apiFetch('/api/tasks/' + taskId + '/copy', { method: 'POST' }).then(function (data) {
+      showToast('Task copied as #' + data.id, 'success');
+      hideDetail();
+    }).catch(function (err) { showToast('Failed: ' + err.message, 'error'); });
+  }
+
+  function deleteTask(taskId) {
     if (!confirm('Delete task #' + taskId + '?')) return;
     apiFetch('/api/tasks/' + taskId, { method: 'DELETE' }).then(function () {
-      showToast('Task deleted', 'success'); loadTasks();
+      showToast('Task deleted', 'success');
+      hideDetail();
     }).catch(function (err) { showToast('Failed: ' + err.message, 'error'); });
-  };
-
-  // ===== Polling — full refresh every 3s =====
-  function startPolling() {
-    if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(loadTasks, 3000);
   }
-
-  // ===== Log Modal =====
-  function closeLogModal() {
-    logModal.classList.remove('show'); logContent.style.display = 'none';
-    logEmpty.style.display = 'none'; logLoading.classList.remove('show');
-  }
-  logClose.addEventListener('click', closeLogModal);
-  logModal.addEventListener('click', function (e) { if (e.target === logModal) closeLogModal(); });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && logModal.classList.contains('show')) closeLogModal();
-  });
 
   // ===== Check session on page load =====
   apiFetch('/api/config').then(handleLoginSuccess).catch(function () { /* stay on login */ });
